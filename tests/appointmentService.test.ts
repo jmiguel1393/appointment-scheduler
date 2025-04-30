@@ -11,13 +11,11 @@ jest.mock("aws-sdk", () => ({
       put: jest
         .fn()
         .mockReturnValue({ promise: jest.fn().mockResolvedValue({}) }),
-      query: jest
-        .fn()
-        .mockReturnValue({
-          promise: jest
-            .fn()
-            .mockResolvedValue({ Items: [{ insuredId: "12345" }] }),
-        }),
+      query: jest.fn().mockReturnValue({
+        promise: jest
+          .fn()
+          .mockResolvedValue({ Items: [{ insuredId: "12345" }] }),
+      }),
     })),
   },
 }));
@@ -27,6 +25,22 @@ describe("AppointmentService", () => {
 
   beforeAll(() => {
     appointmentService = new AppointmentService();
+  });
+
+  it("should successfully create an appointment", async () => {
+    const appointmentData = {
+      insuredId: "12345",
+      scheduleId: 100,
+      countryISO: "PE",
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+
+    const response = await appointmentService.createAppointment(
+      appointmentData
+    );
+
+    expect(response.message).toBe("Appointment scheduled in process");
   });
 
   it("should successfully retrieve appointments by insuredId", async () => {

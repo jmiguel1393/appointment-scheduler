@@ -13,4 +13,12 @@ export class DynamoDb {
     };
     return await dynamoDb.query(params).promise();
   }
+
+  static async putItem(tableName: string, item: any) {
+    const params = {
+      TableName: tableName,
+      Item: item,
+    };
+    await dynamoDb.put(params).promise();
+  }
 }

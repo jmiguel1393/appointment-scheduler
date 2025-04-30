@@ -19,6 +19,13 @@ functions:
           path: health
           method: get
 
+  appointment:
+    handler: src/handlers/appointmentHandler.appointment
+    events:
+      - http:
+          path: appointments
+          method: post
+
   getAppointments:
     handler: src/handlers/getAppointmentsHandler.getAppointments
     events:
