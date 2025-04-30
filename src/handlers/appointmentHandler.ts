@@ -10,12 +10,6 @@ export const createAppointment = async (
     const { insuredId, scheduleId, countryISO } = JSON.parse(
       event.body || "{}"
     );
-    if (!insuredId || !scheduleId || !countryISO) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ message: "Required data missing" }),
-      };
-    }
 
     const appointment: IAppointment = {
       insuredId,

@@ -1,6 +1,11 @@
 import * as AWS from "aws-sdk";
 
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const isOffline = process.env.IS_OFFLINE;
+
+const dynamoDb = new AWS.DynamoDB.DocumentClient({
+  region: "us-east-1",
+  endpoint: isOffline ? "http://localhost:8000" : undefined,
+});
 
 export class DynamoDb {
   static async queryItems(tableName: string, key: string, value: string) {

@@ -7,12 +7,6 @@ export const getAppointments = async (
 ) => {
   try {
     const { insuredId } = event.pathParameters || {};
-    if (!insuredId) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ message: "Insured ID is required" }),
-      };
-    }
 
     const appointmentService = new AppointmentService();
     const appointments = await appointmentService.getAppointmentsByInsuredId(

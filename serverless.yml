@@ -20,7 +20,7 @@ functions:
           method: get
 
   appointment:
-    handler: src/handlers/appointmentHandler.appointment
+    handler: src/handlers/appointmentHandler.createAppointment
     events:
       - http:
           path: appointments
