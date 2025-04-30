@@ -12,9 +12,16 @@ plugins:
   - serverless-offline
 
 functions:
-  health:
+  healthCheck:
     handler: src/handlers/healthHandler.healthCheck
     events:
       - http:
           path: health
+          method: get
+
+  getAppointments:
+    handler: src/handlers/getAppointmentsHandler.getAppointments
+    events:
+      - http:
+          path: appointments/{insuredId}
           method: get
