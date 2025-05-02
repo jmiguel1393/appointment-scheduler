@@ -1,0 +1,33 @@
+service: appointment-updater
+frameworkVersion: "3"
+
+useDotenv: true
+
+plugins:
+  - serverless-offline
+  - serverless-dotenv-plugin
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${env:AWS_REGION}
+  environment:
+    DYNAMODB_TABLE: ${env:DYNAMODB_TABLE}
+    IS_OFFLINE: ${env:IS_OFFLINE}
+
+functions:
+  updateAppointment:
+    handler: handlers/updaterHandler.main
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - AppointmentUpdaterQueue
+              - Arn
+
+resources:
+  Resources:
+    AppointmentUpdaterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: appointment-updater-queue
