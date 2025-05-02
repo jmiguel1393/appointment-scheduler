@@ -1,5 +1,5 @@
 import { SQSEvent } from "aws-lambda";
-import { main } from "../handlers/pe-handler";
+import { main } from "../handlers/cl-handler";
 import * as db from "../shared/db";
 import * as eventbridge from "../shared/eventbridge";
 
