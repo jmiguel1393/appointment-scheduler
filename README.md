@@ -2,7 +2,7 @@
 
 Este proyecto implementa una arquitectura basada en servicios utilizando **AWS Serverless** para gestionar citas médicas de asegurados en **Perú** y **Chile**, integrando SNS, SQS, EventBridge, DynamoDB y RDS.
 
-## 📁 Estructura del Monorepo
+## 📁 Estructura
 
 ```
 /appointment-api         → API REST para agendar y consultar citas
@@ -45,7 +45,6 @@ Este proyecto implementa una arquitectura basada en servicios utilizando **AWS S
 1. Crear un archivo `.env` en cada carpeta con las siguientes variables:
 
 ```env
-AWS_REGION=us-east-2
 DYNAMODB_TABLE=appointments
 SNS_TOPIC_PE=arn:aws:sns:us-east-2:<your_account_id>:appointments-pe
 SNS_TOPIC_CL=arn:aws:sns:us-east-2:<your_account_id>:appointments-cl
@@ -96,6 +95,54 @@ npm install
 ```bash
 npx serverless offline
 ```
+
+## 🧱 Uso de Docker para entorno local
+
+Puedes levantar DynamoDB local y MySQL con Docker para probar los servicios sin conectarte a AWS.
+
+### 🔌 Requisitos
+
+- Docker y Docker Compose instalados
+
+### ⚙️ Comando para levantar contenedores
+
+```bash
+version: "3.8"
+
+services:
+  dynamodb:
+    image: amazon/dynamodb-local
+    container_name: dynamodb
+    ports:
+      - "8000:8000"
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: appointments
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    command: --default-authentication-plugin=mysql_native_password
+```
+
+### ▶️ Ejecutar
+
+```bash
+docker-compose up -d
+```
+
+Esto iniciará:
+
+- DynamoDB local en http://localhost:8000
+- MySQL en localhost:3306 con:
+  - Usuario: root
+  - Contraseña: root
+  - Base de datos: appointments
 
 ## 📮 Pruebas de API
 

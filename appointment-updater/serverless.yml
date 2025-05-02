@@ -10,7 +10,7 @@ plugins:
 provider:
   name: aws
   runtime: nodejs18.x
-  region: ${env:AWS_REGION}
+  region: us-east-2
   environment:
     DYNAMODB_TABLE: ${env:DYNAMODB_TABLE}
     IS_OFFLINE: ${env:IS_OFFLINE}
