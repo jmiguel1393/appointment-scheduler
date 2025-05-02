@@ -6,8 +6,7 @@ Este proyecto implementa una arquitectura basada en servicios utilizando **AWS S
 
 ```
 /appointment-api         → API REST para agendar y consultar citas
-/appointment-handler-pe  → Lambda que escucha SQS (PE) y guarda en RDS
-/appointment-handler-cl  → Lambda que escucha SQS (CL) y guarda en RDS
+/appointment-handler     → Lambda que escucha SQS (PE, CL) y guarda en RDS
 /appointment-updater     → Lambda que escucha confirmaciones y actualiza DynamoDB
 /shared                  → Código común (utilidades, configuración, validaciones)
 ```
@@ -17,7 +16,7 @@ Este proyecto implementa una arquitectura basada en servicios utilizando **AWS S
 1. Un cliente realiza una solicitud `POST /appointments` a `appointment-api`.
 2. Se almacena la cita provisionalmente en **DynamoDB** y se publica un mensaje en **SNS**.
 3. **SNS** enruta el mensaje a **SQS-PE** o **SQS-CL** según el país.
-4. Lambda `appointment-handler-pe` o `appointment-handler-cl` consume el mensaje de su respectivo SQS y almacena la cita en una base de datos **RDS MySQL**.
+4. Lambda `appointment-handler` consume el mensaje de su respectivo SQS y almacena la cita en una base de datos **RDS MySQL**.
 5. Luego, se publica una **confirmación de agendamiento** en **EventBridge**.
 6. Lambda `appointment-updater` escucha un SQS conectado a EventBridge y actualiza el estado de la cita en **DynamoDB** a `completed`.
 
@@ -47,21 +46,24 @@ Este proyecto implementa una arquitectura basada en servicios utilizando **AWS S
 
 ```env
 AWS_REGION=us-east-2
-TABLE_NAME=appointments
+DYNAMODB_TABLE=appointments
 SNS_TOPIC_PE=arn:aws:sns:us-east-2:<your_account_id>:appointments-pe
 SNS_TOPIC_CL=arn:aws:sns:us-east-2:<your_account_id>:appointments-cl
 MYSQL_HOST=<your-mysql-host>
 MYSQL_USER=<your-mysql-user>
 MYSQL_PASSWORD=<your-mysql-password>
-MYSQL_DATABASE=appointments_db
+MYSQL_DB=appointments
+EVENT_BUS_NAME=appointment-events
+SQS_QUEUE_ARN_PE=arn:aws:sqs:us-east-2:<your_account_id>:appointments-queue-pe
+SQS_QUEUE_ARN_CL=arn:aws:sqs:us-east-2:<your_account_id>:appointments-queue-cl
+IS_OFFLINE=true
 ```
 
 2. Instalar dependencias en cada carpeta:
 
 ```bash
 cd appointment-api && npm install
-cd ../appointment-handler-pe && npm install
-cd ../appointment-handler-cl && npm install
+cd ../appointment-handler && npm install
 cd ../appointment-updater && npm install
 ```
 
@@ -69,6 +71,30 @@ cd ../appointment-updater && npm install
 
 ```bash
 sls deploy
+```
+
+## 🧪 Ejecutar cada servicio localmente
+
+Cada componente se puede ejecutar localmente con Serverless Offline.
+
+✅ Pasos para correr un componente:
+
+1. Navegar a la carpeta del componente:
+
+```bash
+cd appointment-handler
+```
+
+2. Instalar dependencias:
+
+```bash
+npm install
+```
+
+3. Ejecutar en modo local:
+
+```bash
+npx serverless offline
 ```
 
 ## 📮 Pruebas de API
@@ -116,8 +142,3 @@ npm run test
 - Es recomendable crear los tópicos SNS y colas SQS manualmente o incluirlos en los `serverless.yml`.
 - El entorno puede adaptarse a LocalStack si se desea probar localmente.
 - Se siguieron principios de separación de responsabilidades y buenas prácticas con TypeScript.
-
-## 👨‍💻 Autor
-
-Desarrollado por **José Miguel Negron Ruiz**  
-📆 Abril 2025
