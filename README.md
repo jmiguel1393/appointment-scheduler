@@ -1,95 +1,123 @@
-# Serverless - AWS Node.js Typescript
+# 🏥 Sistema de Agendamiento de Citas Médicas - Reto Técnico
 
-This project has been generated using the `aws-nodejs-typescript` template from the [Serverless framework](https://www.serverless.com/).
+Este proyecto implementa una arquitectura basada en servicios utilizando **AWS Serverless** para gestionar citas médicas de asegurados en **Perú** y **Chile**, integrando SNS, SQS, EventBridge, DynamoDB y RDS.
 
-For detailed instructions, please refer to the [documentation](https://www.serverless.com/framework/docs/providers/aws/).
-
-## Installation/deployment instructions
-
-Depending on your preferred package manager, follow the instructions below to deploy your project.
-
-> **Requirements**: NodeJS `lts/fermium (v.14.15.0)`. If you're using [nvm](https://github.com/nvm-sh/nvm), run `nvm use` to ensure you're using the same Node version in local and in your lambda's runtime.
-
-### Using NPM
-
-- Run `npm i` to install the project dependencies
-- Run `npx sls deploy` to deploy this stack to AWS
-
-### Using Yarn
-
-- Run `yarn` to install the project dependencies
-- Run `yarn sls deploy` to deploy this stack to AWS
-
-## Test your service
-
-This template contains a single lambda function triggered by an HTTP request made on the provisioned API Gateway REST API `/hello` route with `POST` method. The request body must be provided as `application/json`. The body structure is tested by API Gateway against `src/functions/hello/schema.ts` JSON-Schema definition: it must contain the `name` property.
-
-- requesting any other path than `/hello` with any other method than `POST` will result in API Gateway returning a `403` HTTP error code
-- sending a `POST` request to `/hello` with a payload **not** containing a string property named `name` will result in API Gateway returning a `400` HTTP error code
-- sending a `POST` request to `/hello` with a payload containing a string property named `name` will result in API Gateway returning a `200` HTTP status code with a message saluting the provided name and the detailed event processed by the lambda
-
-> :warning: As is, this template, once deployed, opens a **public** endpoint within your AWS account resources. Anybody with the URL can actively execute the API Gateway endpoint and the corresponding lambda. You should protect this endpoint with the authentication method of your choice.
-
-### Locally
-
-In order to test the hello function locally, run the following command:
-
-- `npx sls invoke local -f hello --path src/functions/hello/mock.json` if you're using NPM
-- `yarn sls invoke local -f hello --path src/functions/hello/mock.json` if you're using Yarn
-
-Check the [sls invoke local command documentation](https://www.serverless.com/framework/docs/providers/aws/cli-reference/invoke-local/) for more information.
-
-### Remotely
-
-Copy and replace your `url` - found in Serverless `deploy` command output - and `name` parameter in the following `curl` command in your terminal or in Postman to test your newly deployed application.
+## 📁 Estructura del Monorepo
 
 ```
-curl --location --request POST 'https://myApiEndpoint/dev/hello' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "name": "Frederic"
-}'
+/appointment-api         → API REST para agendar y consultar citas
+/appointment-handler-pe  → Lambda que escucha SQS (PE) y guarda en RDS
+/appointment-handler-cl  → Lambda que escucha SQS (CL) y guarda en RDS
+/appointment-updater     → Lambda que escucha confirmaciones y actualiza DynamoDB
+/shared                  → Código común (utilidades, configuración, validaciones)
 ```
 
-## Template features
+## 🚀 Flujo del Sistema
 
-### Project structure
+1. Un cliente realiza una solicitud `POST /appointments` a `appointment-api`.
+2. Se almacena la cita provisionalmente en **DynamoDB** y se publica un mensaje en **SNS**.
+3. **SNS** enruta el mensaje a **SQS-PE** o **SQS-CL** según el país.
+4. Lambda `appointment-handler-pe` o `appointment-handler-cl` consume el mensaje de su respectivo SQS y almacena la cita en una base de datos **RDS MySQL**.
+5. Luego, se publica una **confirmación de agendamiento** en **EventBridge**.
+6. Lambda `appointment-updater` escucha un SQS conectado a EventBridge y actualiza el estado de la cita en **DynamoDB** a `completed`.
 
-The project code base is mainly located within the `src` folder. This folder is divided in:
+## ✅ Funcionalidades
 
-- `functions` - containing code base and configuration for your lambda functions
-- `libs` - containing shared code base between your lambdas
+- ✅ Registro de cita médica (`POST /appointments`)
+- ✅ Consulta de citas por asegurado (`GET /appointments/:insuredId`)
+- ✅ Procesamiento por país con Lambdas dedicadas
+- ✅ Confirmación y actualización del estado vía EventBridge
 
+## ⚙️ Requisitos
+
+- Node.js 18+
+- Serverless Framework (`npm install -g serverless`)
+- AWS CLI configurado
+- Cuenta de AWS con los siguientes servicios habilitados:
+  - SNS
+  - SQS
+  - EventBridge
+  - Lambda
+  - DynamoDB
+  - RDS (MySQL)
+
+## 🔧 Configuración
+
+1. Crear un archivo `.env` en cada carpeta con las siguientes variables:
+
+```env
+AWS_REGION=us-east-2
+TABLE_NAME=appointments
+SNS_TOPIC_PE=arn:aws:sns:us-east-2:<your_account_id>:appointments-pe
+SNS_TOPIC_CL=arn:aws:sns:us-east-2:<your_account_id>:appointments-cl
+MYSQL_HOST=<your-mysql-host>
+MYSQL_USER=<your-mysql-user>
+MYSQL_PASSWORD=<your-mysql-password>
+MYSQL_DATABASE=appointments_db
 ```
-.
-├── src
-│   ├── functions               # Lambda configuration and source code folder
-│   │   ├── hello
-│   │   │   ├── handler.ts      # `Hello` lambda source code
-│   │   │   ├── index.ts        # `Hello` lambda Serverless configuration
-│   │   │   ├── mock.json       # `Hello` lambda input parameter, if any, for local invocation
-│   │   │   └── schema.ts       # `Hello` lambda input event JSON-Schema
-│   │   │
-│   │   └── index.ts            # Import/export of all lambda configurations
-│   │
-│   └── libs                    # Lambda shared code
-│       └── apiGateway.ts       # API Gateway specific helpers
-│       └── handlerResolver.ts  # Sharable library for resolving lambda handlers
-│       └── lambda.ts           # Lambda middleware
-│
-├── package.json
-├── serverless.ts               # Serverless service file
-├── tsconfig.json               # Typescript compiler configuration
-├── tsconfig.paths.json         # Typescript paths
-└── webpack.config.js           # Webpack configuration
+
+2. Instalar dependencias en cada carpeta:
+
+```bash
+cd appointment-api && npm install
+cd ../appointment-handler-pe && npm install
+cd ../appointment-handler-cl && npm install
+cd ../appointment-updater && npm install
 ```
 
-### 3rd party libraries
+3. Desplegar los servicios con Serverless:
 
-- [json-schema-to-ts](https://github.com/ThomasAribart/json-schema-to-ts) - uses JSON-Schema definitions used by API Gateway for HTTP request validation to statically generate TypeScript types in your lambda's handler code base
-- [middy](https://github.com/middyjs/middy) - middleware engine for Node.Js lambda. This template uses [http-json-body-parser](https://github.com/middyjs/middy/tree/master/packages/http-json-body-parser) to convert API Gateway `event.body` property, originally passed as a stringified JSON, to its corresponding parsed object
-- [@serverless/typescript](https://github.com/serverless/typescript) - provides up-to-date TypeScript definitions for your `serverless.ts` service file
+```bash
+sls deploy
+```
 
-### Advanced usage
+## 📮 Pruebas de API
 
-Any tsconfig.json can be used, but if you do, set the environment variable `TS_NODE_CONFIG` for building the application, eg `TS_NODE_CONFIG=./tsconfig.app.json npx serverless webpack`
+### POST /appointments
+
+```bash
+curl -X POST https://<api-url>/appointments   -H "Content-Type: application/json"   -d '{
+    "insuredId": "123456",
+    "scheduleId": "abc123",
+    "countryISO": "PE"
+  }'
+```
+
+### GET /appointments/:insuredId
+
+```bash
+curl https://<api-url>/appointments/123456
+```
+
+## 🧪 Pruebas Unitarias
+
+Cada servicio incluye pruebas básicas con Jest:
+
+```bash
+npm run test
+```
+
+## 📚 Notas Técnicas
+
+- Arquitectura basada en eventos, desacoplada y escalable.
+- Uso de Lambdas específicas por país.
+- Serverless Framework para despliegue e infraestructura como código.
+- Código desacoplado y reusable mediante la carpeta `/shared`.
+
+## 📦 Componentes
+
+- `appointment-api`: Expone endpoints para registrar y consultar citas.
+- `appointment-handler-pe/cl`: Procesan mensajes desde SQS y guardan en RDS.
+- `appointment-updater`: Actualiza estado de la cita a `completed` en DynamoDB.
+- `shared`: Contiene lógica común como conexión a MySQL, utilidades y validadores.
+
+## 🧩 Consideraciones
+
+- Es recomendable crear los tópicos SNS y colas SQS manualmente o incluirlos en los `serverless.yml`.
+- El entorno puede adaptarse a LocalStack si se desea probar localmente.
+- Se siguieron principios de separación de responsabilidades y buenas prácticas con TypeScript.
+
+## 👨‍💻 Autor
+
+Desarrollado por **José Miguel Negron Ruiz**  
+📆 Abril 2025
