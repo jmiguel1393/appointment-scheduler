@@ -1,0 +1,36 @@
+openapi: 3.0.0
+info:
+  title: Appointment API
+  version: 1.0.0
+paths:
+  /appointments:
+    post:
+      summary: Crea una cita
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                insuredId:
+                  type: string
+                scheduleId:
+                  type: string
+                countryISO:
+                  type: string
+      responses:
+        "200":
+          description: Cita creada correctamente
+  /appointments/{insuredId}:
+    get:
+      summary: Obtiene citas por insuredId
+      parameters:
+        - name: insuredId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de citas

@@ -11,6 +11,10 @@ plugins:
   - serverless-dotenv-plugin
   - serverless-offline
 
+package:
+  include:
+    - src/docs/swagger.yaml
+
 functions:
   healthCheck:
     handler: src/handlers/healthHandler.healthCheck
@@ -31,4 +35,11 @@ functions:
     events:
       - http:
           path: appointments/{insuredId}
+          method: get
+
+  getSwagger:
+    handler: src/handlers/getSwaggerHandler.getSwagger
+    events:
+      - http:
+          path: docs
           method: get
